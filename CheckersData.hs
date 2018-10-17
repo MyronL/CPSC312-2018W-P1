@@ -12,7 +12,7 @@ data PieceType = Starter | King
   deriving (Eq, Show)
   
 data Piece = Piece PieceType PlayerType
-  | Empty
+    | Empty
   deriving (Eq, Show)
 
 
@@ -31,13 +31,8 @@ instance Ord Square where
 
 
 
-data Move = Jump Square [Square]
-  | Forward Square
-  | Backward Square
-
-data Action = Move
-  | Emote
-  | Concede
+data Action = Move Square Square
+    | EndTurn
 
 
 
@@ -50,7 +45,7 @@ type GameBoard = Map Square Piece
 -- - Player's turn
 -- - List of legal moves
 -- - Player's action
-data InternalState = GameState GameBoard Player [Move] Action
+data InternalState = GameState GameBoard PlayerType
 
 data State = State InternalState [Action]  -- internal_state available_actions
 
@@ -65,26 +60,27 @@ type Player = State -> Action
 -- GAME INIT ---------------------------
 
 
+boardSize = 8
 
 -- All Steppable Checkers Squares: 
 --    (2,1), (4,1) ... 
 --    (1,2), (3,2) ...
-squares = [(Square x y) | y <- [1..8], x <- [1..8], (mod x 2 == 0 && mod y 2 == 1) || (mod x 2 == 1 && mod y 2 == 0)]
+squares = [(Square x y) | y <- [1..boardSize], x <- [1..boardSize], (mod x 2 == 0 && mod y 2 == 1) || (mod x 2 == 1 && mod y 2 == 0)]
 
 
 startBoard = initSquares Map.empty squares
 
 
 
-initSquares :: GameBoard -> [Square] -> GameBoard 
+initSquares :: GameBoard -> [Square] -> GameBoard
 initSquares board [] = board
 initSquares board (h:t) = initSquares (initPiece board h $ initPieceAtSquare h) t
 
 initPieceAtSquare :: Square -> Piece
 initPieceAtSquare (Square x y) 
-  | y <= 3 = (Piece Starter North)
-  | y >= 6 = (Piece Starter South)
-  | otherwise = Empty
+  | y <= 3              = (Piece Starter North)
+  | y >= boardSize - 2  = (Piece Starter South)
+  | otherwise           = Empty
 
 
 initPiece :: GameBoard -> Square -> Piece -> GameBoard
@@ -94,47 +90,18 @@ initPiece board sq piece =  Map.insert sq piece board
 
 -- GAME DISPLAY (SIMPLE) ---------------
 
+displayBoardHelper :: GameBoard -> Int -> Int -> String
+displayBoardHelper board x y
+    | y == boardSize+1  = ""
+    | x == boardSize    = displayCell board boardSize y ++ "\n" ++ (displayBoardHelper board 1 (y+1))
+    | otherwise         = displayCell board x y ++ (displayBoardHelper board (x+1) y)
 
--- DO: RECREATE
-file = 
-  do
-    print $ " |o| |o| |o| |o| | "
-    print $ " | |o| |o| |o| |o| "
-    print $ " |o| |o| |o| |o| | "
-    print $ " | |#| |#| |#| |#| "
-    print $ " |#| |#| |#| |#| | "
-    print $ " | |x| |x| |x| |x| "
-    print $ " |x| |x| |x| |x| | "
-    print $ " | |x| |x| |x| |x| "
-
-
-arrboard =
-  [ " |o| |o| |o| |o| | ",
-    " | |o| |o| |o| |o| ",
-    " |o| |o| |o| |o| | ",
-    " | |#| |#| |#| |#| ",
-    " |#| |#| |#| |#| | ",
-    " | |x| |x| |x| |x| ",
-    " |x| |x| |x| |x| | ",
-    " | |x| |x| |x| |x| " ]
-
-displayBoardHelper board squares _ 9 = ""
-displayBoardHelper board squares 8 y = displayCell board squares 8 y ++ "\n" ++ (displayBoardHelper board squares 1 (y+1))
-displayBoardHelper board squares x y = displayCell board squares x y ++ (displayBoardHelper board squares (x+1) y)
-
-displayCell :: GameBoard -> [Square] -> Int -> Int -> String
-displayCell board squares x y
+displayCell :: GameBoard -> Int -> Int -> String
+displayCell board x y
     | elem (Square x y) squares = displaySquare board (Square x y)
-    | x == 1                    = "| "
-    | x == 8                    = " |"
-    | otherwise                 = " "
-
-
-displayRow :: GameBoard -> Int -> [Square] -> String
-displayRow board n [] = ""
-displayRow board n ((Square x y):t)
-    | y == n    = displaySquare board (Square x y) ++ (displayRow board n t)
-    | otherwise = (displayRow board n t)
+    | x == 1            = "| "
+    | x == boardSize    = " |"
+    | otherwise         = " "
 
 displaySquare :: GameBoard -> Square -> String
 displaySquare board sq = "|" ++ [displayPlayerPiece (Map.lookup sq board)] ++ "|"
@@ -163,39 +130,43 @@ displayWhiteSquare = ' '
   
   
   
-displayBoard :: GameBoard -> [Square] -> String
-displayBoard board squares = displayBoardHelper board squares 1 1
+displayBoard :: GameBoard -> String
+displayBoard board = displayBoardHelper board 1 1
 
-printBoard = putStrLn (displayBoard startBoard squares)
-
---displaySquares (GameBoard m) (h:t) = displaySquares (displaySquare (GameBoard m) h $ displayPlayerPiece h) t
-
---displaySquares (GameBoard m) (h:t) = displaySquares (displayPieceAtSquare (GameBoard m) h $ displayPlayerPiece h) t  
-
---initSquares (GameBoard m) (h:t) = initSquares (initPiece (GameBoard m) h $ initPieceAtSquare h) t
-
-  
-{-
-
-" |o| |o| |o| |o| | "
-" | |o| |o| |o| |o| "
-" |o| |o| |o| |o| | "
-" | |#| |#| |#| |#| "
-" |#| |#| |#| |#| | "
-" | |x| |x| |x| |x| "
-" |x| |x| |x| |x| | "
-" | |x| |x| |x| |x| "
-
-" |o|#|o|#|o|#|o|#| "
-" |#|o|#|o|#|o|#|o| "
-" |o|#|o|#|o|#|o|#| "
-" |#| |#| |#| |#| | "
-" | |#| |#| |#| |#| "
-" |#|x|#|x|#|x|#|x| "
-" |x|#|x|#|x|#|x|#| "
-" |#|x|#|x|#|x|#|x| "
-
--}
+printBoard = putStrLn (displayBoard startBoard)
 
 
-main = print $ "OK"
+-- GAME LOGIC
+
+getActionsFromState :: InternalState -> [Action]
+getActionsFromState state = getActionsFromSquares state squares
+
+
+getActionsFromSquares :: InternalState -> [Square] -> [Action]
+getActionsFromSquares state [] = []
+getActionsFromSquares state (h:t) = getActionsFromSquare state h ++ (getActionsFromSquares state t)
+
+getActionsFromSquare :: InternalState -> Square -> [Action]
+getActionsFromSquare (GameState board playerType) sq = getActionsFromPiece (Map.lookup sq board) playerType sq
+
+getActionsFromPiece :: Maybe Piece -> PlayerType -> Square -> [Action]
+getActionsFromPiece Nothing _ _ = []
+-- getActionsFromPiece (Piece pieceType piecePlayerType) playerType sq
+--     | piecePlayerType /= playerType = []
+--     | pieceType == King             = (jumpsNorth
+-- TODO: Kings can move in any direction, other pieces can only move away from their player
+
+
+getAllMovesFromSquare :: GameBoard -> Square -> [Square]
+getAllMovesFromSquare board (Square x y) = [sq | sq <- allMoves, isSquareEmpty board sq]
+    where
+        allMoves = [(Square (x+1) (y+1)), (Square (x+1) (y-1)), (Square (x-1) (y+1)), (Square (x-1) (y-1))]
+
+
+isSquareEmpty :: GameBoard -> Square -> Bool
+isSquareEmpty board sq =
+    case piece of
+        Just Empty -> True
+        _ -> False
+    where
+        piece = Map.lookup sq board
