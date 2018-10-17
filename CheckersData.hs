@@ -1,25 +1,25 @@
+module CheckersData where
 
 import Data.Map as Map
 import Data.List as List
 
 
 
-data Player = North
-  | South
-  deriving (Eq)  
+data PlayerType = North | South
+  deriving (Eq, Show)
 
-data PieceType = Starter
-  | King
-  deriving (Eq)
+data PieceType = Starter | King
+  deriving (Eq, Show)
   
-data Piece = Piece PieceType Player
+data Piece = Piece PieceType PlayerType
   | Empty
-  deriving (Eq)
+  deriving (Eq, Show)
 
 
 
 -- SINGLE SQUARE TILE IN A CHECKERS BOARD
 data Square = Square Int Int
+    deriving (Show)
 
 instance Eq Square where
     (Square a b) == (Square c d) = a == c && b == d
@@ -41,7 +41,7 @@ data Action = Move
 
 
 
-data GameBoard = GameBoard (Map Square Piece) 
+type GameBoard = Map Square Piece
 
 
 
@@ -50,7 +50,16 @@ data GameBoard = GameBoard (Map Square Piece)
 -- - Player's turn
 -- - List of legal moves
 -- - Player's action
-data GameState = GameState GameBoard Player [Move] Action
+data InternalState = GameState GameBoard Player [Move] Action
+
+data State = State InternalState [Action]  -- internal_state available_actions
+
+data Result = EndOfGame Double State    -- end of game, value, starting state
+            | ContinueGame State        -- continue with new state
+
+type Game = Action -> State -> Result
+
+type Player = State -> Action
 
 
 -- GAME INIT ---------------------------
@@ -60,16 +69,16 @@ data GameState = GameState GameBoard Player [Move] Action
 -- All Steppable Checkers Squares: 
 --    (2,1), (4,1) ... 
 --    (1,2), (3,2) ...
-squares = [(Square x y) | x <- [1..8], y <- [1..8], (mod x 2 == 0 && mod y 2 == 1) || (mod x 2 == 1 && mod y 2 == 0)]
+squares = [(Square x y) | y <- [1..8], x <- [1..8], (mod x 2 == 0 && mod y 2 == 1) || (mod x 2 == 1 && mod y 2 == 0)]
 
 
-startGame = initSquares (GameBoard (Map.empty)) squares
+startBoard = initSquares Map.empty squares
 
 
 
 initSquares :: GameBoard -> [Square] -> GameBoard 
-initSquares (GameBoard m) [] = (GameBoard m)
-initSquares (GameBoard m) (h:t) = initSquares (initPiece (GameBoard m) h $ initPieceAtSquare h) t
+initSquares board [] = board
+initSquares board (h:t) = initSquares (initPiece board h $ initPieceAtSquare h) t
 
 initPieceAtSquare :: Square -> Piece
 initPieceAtSquare (Square x y) 
@@ -79,7 +88,7 @@ initPieceAtSquare (Square x y)
 
 
 initPiece :: GameBoard -> Square -> Piece -> GameBoard
-initPiece (GameBoard b) sq piece = GameBoard $ Map.insert sq piece b
+initPiece board sq piece =  Map.insert sq piece board
 
 
 
@@ -107,50 +116,58 @@ arrboard =
     " |#| |#| |#| |#| | ",
     " | |x| |x| |x| |x| ",
     " |x| |x| |x| |x| | ",
-    " | |x| |x| |x| |x| " ] 
+    " | |x| |x| |x| |x| " ]
 
-displayBoard :: GameBoard -> [[Char]]
-displayBoard (GameBoard b) = arrboard
+displayBoardHelper board squares _ 9 = ""
+displayBoardHelper board squares 8 y = displayCell board squares 8 y ++ "\n" ++ (displayBoardHelper board squares 1 (y+1))
+displayBoardHelper board squares x y = displayCell board squares x y ++ (displayBoardHelper board squares (x+1) y)
+
+displayCell :: GameBoard -> [Square] -> Int -> Int -> String
+displayCell board squares x y
+    | elem (Square x y) squares = displaySquare board (Square x y)
+    | x == 1                    = "| "
+    | x == 8                    = " |"
+    | otherwise                 = " "
 
 
-displayRow :: Int -> [Square] -> [Char]
-displayRow n [] = ""
-displayRow n (h:t) = 'A' : displayRow n t
+displayRow :: GameBoard -> Int -> [Square] -> String
+displayRow board n [] = ""
+displayRow board n ((Square x y):t)
+    | y == n    = displaySquare board (Square x y) ++ (displayRow board n t)
+    | otherwise = (displayRow board n t)
 
-displaySquare :: Square -> [Char]
-displaySquare (Square x y) = ""
+displaySquare :: GameBoard -> Square -> String
+displaySquare board sq = "|" ++ [displayPlayerPiece (Map.lookup sq board)] ++ "|"
 
 
-displayPlayerPiece :: Piece -> [Char] 
-displayPlayerPiece (Piece pt pl) 
+displayPlayerPiece :: Maybe Piece -> Char
+displayPlayerPiece (Just (Piece pt pl))
   | pl == North = displayNPiece (Piece pt pl) 
-  | pl == South = displaySPiece (Piece pt pl) 
-  | otherwise = displayEmpty
-
-displayPieceAtSquare :: GameBoard -> Square -> [Char]
-displayPieceAtSquare (GameBoard m) (Square x y) = ""
+  | pl == South = displaySPiece (Piece pt pl)
+displayPlayerPiece _ = displayEmpty
 
 
 
-displayNPiece :: Piece -> [Char] 
+displayNPiece :: Piece -> Char
 displayNPiece (Piece pt pl) 
-  | pt == Starter = "o"
-  | pt == King = "8"
-  | otherwise = ""
+  | pt == Starter = 'o'
+  | pt == King = '8'
 
-displaySPiece :: Piece -> [Char] 
+displaySPiece :: Piece -> Char
 displaySPiece (Piece pt pl) 
-  | pt == Starter = "x"
-  | pt == King = "K"
-  | otherwise = ""
+  | pt == Starter = 'x'
+  | pt == King = 'K'
 
-displayEmpty = "#"
-displayWhiteSquare = " "
+displayEmpty = '#'
+displayWhiteSquare = ' '
   
   
   
-displaySquares :: GameBoard -> [Square] -> [Char]
-displaySquares (GameBoard m) [] = ""
+displayBoard :: GameBoard -> [Square] -> String
+displayBoard board squares = displayBoardHelper board squares 1 1
+
+printBoard = putStrLn (displayBoard startBoard squares)
+
 --displaySquares (GameBoard m) (h:t) = displaySquares (displaySquare (GameBoard m) h $ displayPlayerPiece h) t
 
 --displaySquares (GameBoard m) (h:t) = displaySquares (displayPieceAtSquare (GameBoard m) h $ displayPlayerPiece h) t  
