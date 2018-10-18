@@ -9,6 +9,8 @@ import System.IO
 -- :load TwentyQs
 -- go
 
+data Turn = Int
+  deriving (Eq, Ord, Show)
 
 data PlayerType = North | South
   deriving (Eq, Show)
@@ -83,54 +85,6 @@ initPieceAtSquare (Square x y)
 initPiece :: GameBoard -> Square -> Piece -> GameBoard
 initPiece board sq piece =  Map.insert sq piece board
 
-
-
--- GAME DISPLAY (SIMPLE) ---------------
-
-displayBoardHelper :: GameBoard -> Int -> Int -> String
-displayBoardHelper board x y
-    | y == boardSize+1  = ""
-    | x == boardSize    = displayCell board boardSize y ++ "\n" ++ (displayBoardHelper board 1 (y+1))
-    | otherwise         = displayCell board x y ++ (displayBoardHelper board (x+1) y)
-
-displayCell :: GameBoard -> Int -> Int -> String
-displayCell board x y
-    | elem (Square x y) squares = displaySquare board (Square x y)
-    | x == 1            = "| "
-    | x == boardSize    = " |"
-    | otherwise         = " "
-
-displaySquare :: GameBoard -> Square -> String
-displaySquare board sq = "|" ++ [displayPlayerPiece (Map.lookup sq board)] ++ "|"
-
-
-displayPlayerPiece :: Maybe Piece -> Char
-displayPlayerPiece (Just (Piece pt pl))
-  | pl == North = displayNPiece (Piece pt pl) 
-  | pl == South = displaySPiece (Piece pt pl)
-displayPlayerPiece _ = displayEmpty
-
-
-
-displayNPiece :: Piece -> Char
-displayNPiece (Piece pt pl) 
-  | pt == Starter = 'o'
-  | pt == King = '8'
-
-displaySPiece :: Piece -> Char
-displaySPiece (Piece pt pl) 
-  | pt == Starter = 'x'
-  | pt == King = 'K'
-
-displayEmpty = '#'
-displayWhiteSquare = ' '
-
-
-
-displayBoard :: GameBoard -> String
-displayBoard board = displayBoardHelper board 1 1
-
-printBoard = putStrLn (displayBoard startBoard)
 
 
 -- GAME LOGIC

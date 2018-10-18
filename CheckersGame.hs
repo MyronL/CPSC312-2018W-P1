@@ -7,6 +7,7 @@ module CheckersGame where
 -- start
 
 import CheckersData
+import CheckersGraphicsBasicPrintLn
 import Data.Map as Map
 import Data.List as List
 import System.IO
@@ -33,6 +34,7 @@ startGame =
     printBoard
     putStrLn $ "PLAYER ONE: GO"
     response <- getLineCommand
+    putStrLn $ response
     printBoard
     putStrLn $ "PLAYER TWO: GO"
 
@@ -45,15 +47,6 @@ startGame =
 
 
 
-
--- (todo: pending)
-welcomeScreen = ["WELCOME TO HASKELL CHECKERS",
-    "Play at your own risk..."]
--- 
-startOptions = ["Commands:", 
-    "Player VS Player (enter 1)", 
-    "Player VS AI CPU (enter 2)", 
-    "Exit (enter any other key)"]
 
 
 putStartOptions =  printLines startOptions
