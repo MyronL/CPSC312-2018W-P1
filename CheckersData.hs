@@ -4,6 +4,11 @@ import Data.Map as Map
 import Data.List as List
 import System.IO
 
+-- To run it, try:
+-- ghci
+-- :load TwentyQs
+-- go
+
 
 data PlayerType = North | South
   deriving (Eq, Show)
@@ -165,12 +170,7 @@ isSquareEmpty board sq =
 
 
 
--- todo:
-startGame = 
-  do
-    printBoard
-    putStrLn $ "PLAYER ONE: GO"
-    
+   
     
     
     
