@@ -9,6 +9,7 @@ module CheckersGame where
 import CheckersData
 import CheckersGraphicsBasicPrintLn
 import CheckersGraphicsBasicUserIO
+import CheckersAI
 import Data.Map as Map
 import Data.List as List
 import System.IO
@@ -30,7 +31,27 @@ runFirst =
 
         putStartOptions
         getStartOptions
-        startGameTest
+
+
+getStartOptions =
+  do
+    response <- getChar
+    if (response == '1')
+       then do
+          putStrLn "\nPlayer VS Player Selected. "
+          putStrLn "\nReady..."
+          oneHalfSecDelay
+          putStrLn "\nSTART! "
+          play checkers (YourTurn startState) humanPlayer humanPlayer
+       else if (response == '2')
+       then do
+          putStrLn "\nPlayer VS AI CPU Selected."
+          putStrLn "\nReady..."
+          oneHalfSecDelay
+          putStrLn "\nSTART! "
+          play checkers (YourTurn startState) humanPlayer computer
+       else do
+          exitPolitely
 
 
 startGame = 
@@ -77,7 +98,7 @@ startGameTest =
     printBoard
 
 
-
+play:: Game -> Result -> IOPlayer -> IOPlayer -> IO ()
 play game (YourTurn (State (GameState board playerType) moves)) player1 player2 =
     do
         putStrLn (displayBoard board)
@@ -97,18 +118,10 @@ play game (EndOfGame winningPlayer board) player1 player2 =
         putStrLn (displayBoard board)
         putStrLn ("The winner is " ++ (show winningPlayer))
 
+play game (InvalidMove state) player1 player2 =
+    do
+        putStrLn "That is not a valid move, please try again"
+        play game (YourTurn state) player2 player1
+
 
 playCheckers = play checkers (YourTurn startState) humanPlayer humanPlayer
-
-humanPlayer :: State -> IO Move
-humanPlayer (State (GameState board playerType) (h:t)) =
-    do
-        putStrLn "Enter your move"
-        line <- getLine
-        return h
-
-
-simpleComputer :: State -> IO Move
-simpleComputer (State (GameState board playerType) (h:t)) =
-    do
-        return h

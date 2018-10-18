@@ -55,11 +55,17 @@ data State = State InternalState [Move]  -- internal_state available_actions
 data Result = EndOfGame PlayerType GameBoard    -- end of game, value, starting state
             | MyTurn State              -- continue current player's turn with new state
             | YourTurn State            -- continue next player's turn with new state
-            | InvalidMove
+            | InvalidMove State
 
 type Game = Move -> State -> Result
 
 type Player = State -> Move
+type IOPlayer = State -> IO Move
+
+createIOPlayer :: Player -> IOPlayer
+createIOPlayer player state =
+    do
+        return (player state)
 
 
 -- GAME INIT ---------------------------
@@ -182,13 +188,14 @@ startState = getState (GameState startBoard South)
 checkers :: Game
 checkers move (State internalState availableMoves)
     | elem move availableMoves = if isJump move then getResultFromJump move internalState else getResultFromMove move internalState
-    | otherwise                 = InvalidMove
+    | otherwise                 = InvalidMove (State internalState availableMoves)
 
 
 isJump :: Move -> Bool
 isJump move = 2 == abs (verticalMovement move)
 
 
+-- TODO: king pieces when they get to the ends
 getResultFromMove :: Move -> InternalState -> Result
 getResultFromMove (Move from to) (GameState board playerType)
     | isWin newBoard playerType = EndOfGame playerType newBoard
