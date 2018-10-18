@@ -6,7 +6,8 @@ import Data.Map as Map
 import Data.List as List
 import System.IO
 
-import Data.List.Split 
+import System.Exit
+import Control.Concurrent
 
 
 -- GAME DISPLAY (SIMPLE): BOARD ---------------
@@ -18,10 +19,13 @@ rowLabelLeft i = show i ++ " "
 rowLabelRight :: Int -> [Char]
 rowLabelRight i = " " ++ show i
 
+-- use this to add padding for the board display
+leftPadding = "   "
+
 displayBoardHelper :: GameBoard -> Int -> Int -> String
 displayBoardHelper board x y
     | y == boardSize+1  = ""
-    | x == boardSize    = displayCell board boardSize y ++ (rowLabelRight y) ++ "\n" ++ (displayBoardHelper board 1 (y+1))
+    | x == boardSize    = displayCell board boardSize y ++ (rowLabelRight y) ++ "\n" ++ leftPadding ++ (displayBoardHelper board 1 (y+1))
     | otherwise         = displayCell board x y ++ (displayBoardHelper board (x+1) y)
 
 displayCell :: GameBoard -> Int -> Int -> String
@@ -65,32 +69,15 @@ printBoard = putStrLn (addRowColLabels (displayBoard startBoard))
 
 
 -- Column Labels: labelling x coord as (a..h) (UI equiv to 1..8)
-colLabelTop = "\n|a|b|c|d|e|f|g|h|\n \n"
-colLabelBot = "\n|a|b|c|d|e|f|g|h|\n"
+colLabelTop = "\n" ++ leftPadding ++ "|a|b|c|d|e|f|g|h|\n \n" ++ leftPadding 
+colLabelBot = "\n" ++ leftPadding ++ "|a|b|c|d|e|f|g|h|\n"
+
+northLabel = "\n" ++ leftPadding ++ "|---- NORTH ----|"
+southLabel = leftPadding ++ "|---- SOUTH ----|\n"
 
 addRowColLabels :: String -> String
 addRowColLabels b2s = 
   do 
-    colLabelTop ++ b2s ++ colLabelBot
+    northLabel ++ colLabelTop ++ b2s ++ colLabelBot ++ southLabel
 
 
--- helper replace function
---replace :: Eq a => a -> a -> [a] -> [a]
---replace a b = List.map $ \c -> if c == a then b else c
-
-
--- GAME DISPLAY (SIMPLE): SCREEN & USER DIALOGUE ---------------
-
--- WELCOME SCREEN (pending)
-welcomeScreen = ["WELCOME TO HASKELL CHECKERS",
-    "Play at your own risk..."]
--- 
-startOptions = ["Commands:", 
-    "Player VS Player (enter 1)", 
-    "Player VS AI CPU (enter 2)", 
-    "Exit (enter any other key)"]
-
-
--- todo:
-displayPlayerTurn :: PlayerType -> Turn -> [Char]
-displayPlayerTurn p t =  "PLAYER " ++ show p ++ " TURN " ++ show t ++ ": GO" 
