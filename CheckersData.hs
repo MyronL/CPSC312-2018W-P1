@@ -46,14 +46,14 @@ type GameBoard = Map Square Piece
 -- - Player's action
 data InternalState = GameState GameBoard PlayerType
 
-data State = State InternalState [Action]  -- internal_state available_actions
+data State = State InternalState [Move]  -- internal_state available_actions
 
 data Result = EndOfGame Double State    -- end of game, value, starting state
             | ContinueGame State        -- continue with new state
 
-type Game = Action -> State -> Result
+type Game = Move -> State -> Result
 
-type Player = State -> Action
+type Player = State -> Move
 
 
 -- GAME INIT ---------------------------
@@ -89,37 +89,82 @@ initPiece board sq piece =  Map.insert sq piece board
 
 -- GAME LOGIC
 
-getActionsFromState :: InternalState -> [Action]
-getActionsFromState state = getActionsFromSquares state squares
+getActionsFromState :: InternalState -> [Move]
+getActionsFromState state =
+    if jumpMoves == []
+    then getActionsFromSquares state squares getAllMovesFromSquare
+    else jumpMoves
+    where
+        jumpMoves = getActionsFromSquares state squares getAllJumpsFromSquare
 
-getActionsFromSquares :: InternalState -> [Square] -> [Action]
-getActionsFromSquares state [] = []
-getActionsFromSquares state (h:t) = getActionsFromSquare state h ++ (getActionsFromSquares state t)
+getActionsFromSquares :: InternalState -> [Square] -> MoveGetter -> [Move]
+getActionsFromSquares _ [] _ = []
+getActionsFromSquares state (h:t) moveGetter = getActionsFromSquare state h moveGetter ++ (getActionsFromSquares state t moveGetter)
 
-getActionsFromSquare :: InternalState -> Square -> [Action]
-getActionsFromSquare (GameState board playerType) sq = getActionsFromPiece (Map.lookup sq board) playerType sq
+getActionsFromSquare :: InternalState -> Square -> MoveGetter -> [Move]
+getActionsFromSquare (GameState board playerType) sq moveGetter =
+    case Map.lookup sq board of
+        Just (Piece pieceType piecePlayerType) -> getActionsFromPiece board playerType sq pieceType piecePlayerType moveGetter
+        _ -> []
 
-getActionsFromPiece :: Maybe Piece -> PlayerType -> Square -> [Action]
-getActionsFromPiece Nothing _ _ = []
--- getActionsFromPiece (Piece pieceType piecePlayerType) playerType sq
---     | piecePlayerType /= playerType = []
---     | pieceType == King             = (jumpsNorth
--- TODO: Kings can move in any direction, other pieces can only move away from their player
+getActionsFromPiece :: GameBoard -> PlayerType -> Square -> PieceType -> PlayerType -> MoveGetter -> [Move]
+getActionsFromPiece board playerType sq pieceType piecePlayerType moveGetter
+     | piecePlayerType /= playerType = []
+     | pieceType == King             = moves
+     | otherwise                     = getForwardMoves moves playerType
+     where moves = moveGetter board sq
+
+getForwardMoves :: [Move] -> PlayerType -> [Move]
+getForwardMoves moves playerType = [move | move <- moves, comparator move]
+    where
+        comparator = case playerType of
+            North -> goingSouth
+            South -> goingNorth
+
+verticalMovement :: Move -> Int
+verticalMovement (Move (Square _ y1) (Square _ y2)) = y2 - y1
+
+goingNorth :: Move -> Bool
+goingNorth move = 0 > verticalMovement move
+
+goingSouth :: Move -> Bool
+goingSouth move = 0 < verticalMovement move
+
+isJumpLegal :: GameBoard -> Move -> Bool
+isJumpLegal board (Move from to) =
+    case Map.lookup from board of
+        Just (Piece _ playerType) ->
+            case getJumpedPiece board (Move from to) of
+                Just (Piece _ jumpedPlayer) -> playerType /= jumpedPlayer
+                _ -> False
+        _ -> False
+
+getJumpedPiece :: GameBoard -> Move -> Maybe Piece
+getJumpedPiece board move = Map.lookup (getJumpedSquare move) board
+
+getJumpedSquare :: Move -> Square
+getJumpedSquare (Move (Square fromX fromY) (Square toX toY)) = Square (div (fromX + toX) 2) (div (fromY + toY) 2)
 
 
-getAllMovesFromSquare :: GameBoard -> Square -> [Square]
-getAllMovesFromSquare board (Square x y) = [sq | sq <- allMoves, isSquareEmpty board sq]
+type MoveGetter = GameBoard -> Square -> [Move]
+
+getAllJumpsFromSquare :: MoveGetter
+getAllJumpsFromSquare board (Square x y) = [Move (Square x y) sq | sq <- allMoves, isSquareEmpty board sq, isJumpLegal board (Move (Square x y) sq)]
+    where
+        allMoves = [(Square (x+2) (y+2)), (Square (x+2) (y-2)), (Square (x-2) (y+2)), (Square (x-2) (y-2))]
+
+
+getAllMovesFromSquare :: MoveGetter
+getAllMovesFromSquare board (Square x y) = [Move (Square x y) sq | sq <- allMoves, isSquareEmpty board sq]
     where
         allMoves = [(Square (x+1) (y+1)), (Square (x+1) (y-1)), (Square (x-1) (y+1)), (Square (x-1) (y-1))]
 
 
 isSquareEmpty :: GameBoard -> Square -> Bool
 isSquareEmpty board sq =
-    case piece of
+    case Map.lookup sq board of
         Just Empty -> True
         _ -> False
-    where
-        piece = Map.lookup sq board
 
 
 
@@ -129,9 +174,8 @@ isSquareEmpty board sq =
     
     
 -- GAME CONTROLS & PERMISSIONS
-
-data Action = Move Square Square
-    | EndTurn
+data Move = Move Square Square
+    deriving (Show, Eq)
 
 
 data Emote = Greet | Taunt | Lol | Nice

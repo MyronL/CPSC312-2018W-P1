@@ -17,7 +17,7 @@ rowLabelLeft :: Int -> [Char]
 rowLabelLeft i = show i ++ " "
 
 rowLabelRight :: Int -> [Char]
-rowLabelRight i = " " ++ show i
+rowLabelRight i = "  " ++ show i
 
 -- use this to add padding for the board display
 leftPadding = "   "
