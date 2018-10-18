@@ -2,7 +2,7 @@ module CheckersData where
 
 import Data.Map as Map
 import Data.List as List
-
+import System.IO
 
 
 data PlayerType = North | South
@@ -26,14 +26,6 @@ instance Eq Square where
 
 instance Ord Square where
     (Square a b) <= (Square c d) = a < c || (a == c && b <= d)
-
-
-
-
-
-data Action = Move Square Square
-    | EndTurn
-
 
 
 type GameBoard = Map Square Piece
@@ -127,9 +119,9 @@ displaySPiece (Piece pt pl)
 
 displayEmpty = '#'
 displayWhiteSquare = ' '
-  
-  
-  
+
+
+
 displayBoard :: GameBoard -> String
 displayBoard board = displayBoardHelper board 1 1
 
@@ -140,7 +132,6 @@ printBoard = putStrLn (displayBoard startBoard)
 
 getActionsFromState :: InternalState -> [Action]
 getActionsFromState state = getActionsFromSquares state squares
-
 
 getActionsFromSquares :: InternalState -> [Square] -> [Action]
 getActionsFromSquares state [] = []
@@ -170,3 +161,45 @@ isSquareEmpty board sq =
         _ -> False
     where
         piece = Map.lookup sq board
+
+
+
+
+-- todo:
+startGame = 
+  do
+    printBoard
+    putStrLn $ "PLAYER ONE: GO"
+    
+    
+    
+    
+-- GAME CONTROLS & PERMISSIONS
+
+data Action = Move Square Square
+    | EndTurn
+
+
+data Emote = Greet | Taunt | Lol | Nice
+
+greetDefault = "Hi there!"
+tauntDefault = "L2PLAY NOOB"
+lolDefault = "HAHAHA"
+niceDefault = "Nice Move.."
+
+-- -- ??
+-- listPlayerPieces :: GameBoard -> Player -> [Piece]
+-- listPlayerPieces b p = []
+--
+-- -- ??
+-- availableActions :: GameBoard -> Player -> [Move]
+-- availableActions b p = []
+
+
+
+-- FOR AI: probably rank available actions for whats best?
+-- i.e. multijump > jump > just move
+-- possibly get a second layer of what would AI's opponent do after, then 
+-- possible moves after opponent's turn (i.e. AI's next turn), but thats starting 
+-- to get into Hidden Markov Model type stuff
+
