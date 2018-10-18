@@ -63,9 +63,9 @@ displayWhiteSquare = ' '
 
 
 displayBoard :: GameBoard -> String
-displayBoard board = displayBoardHelper board 1 1
+displayBoard board = (addRowColLabels (displayBoardHelper board 1 1))
 
-printBoard = putStrLn (addRowColLabels (displayBoard startBoard))
+printBoard = putStrLn (displayBoard startBoard)
 
 
 -- Column Labels: labelling x coord as (a..h) (UI equiv to 1..8)
@@ -80,4 +80,12 @@ addRowColLabels b2s =
   do 
     northLabel ++ colLabelTop ++ b2s ++ colLabelBot ++ southLabel
 
+
+
+
+instance Show State where
+    show (State (GameState board playerType) moves) = displayBoard board ++ "\nCurrent player: " ++ (show playerType) ++ "\nAvailable moves: " ++ (show moves)
+
+instance Show Result where
+    show (YourTurn state) = show state
 

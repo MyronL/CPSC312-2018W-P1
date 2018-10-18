@@ -15,6 +15,10 @@ data Turn = Turn Int
 data PlayerType = North | South
   deriving (Eq, Show)
 
+flipPlayer :: PlayerType -> PlayerType
+flipPlayer North = South
+flipPlayer South = North
+
 data PieceType = Starter | King
   deriving (Eq, Show)
   
@@ -49,7 +53,9 @@ data InternalState = GameState GameBoard PlayerType
 data State = State InternalState [Move]  -- internal_state available_actions
 
 data Result = EndOfGame Double State    -- end of game, value, starting state
-            | ContinueGame State        -- continue with new state
+            | MyTurn State              -- continue current player's turn with new state
+            | YourTurn State            -- continue next player's turn with new state
+            | InvalidMove
 
 type Game = Move -> State -> Result
 
@@ -168,10 +174,37 @@ isSquareEmpty board sq =
 
 
 
+getState :: InternalState -> State
+getState internalState = State internalState (getActionsFromState internalState)
 
-   
-    
-    
+startState = getState (GameState startBoard South)
+
+checkers :: Game
+checkers move (State internalState availableMoves)
+    | elem move availableMoves = if isJump move then getResultFromJump move internalState else getResultFromMove move internalState
+    | otherwise                 = InvalidMove
+
+
+isJump :: Move -> Bool
+isJump move = 2 == abs (verticalMovement move)
+
+
+getResultFromMove :: Move -> InternalState -> Result
+getResultFromMove (Move from to) (GameState board playerType)
+    | isWin newBoard playerType = EndOfGame 1 startState
+    | otherwise               = YourTurn (getState (GameState newBoard (flipPlayer playerType)))
+    where newBoard = Map.insert from Empty (Map.insert to (board ! from ) board)
+
+-- TODO: fix this
+getResultFromJump :: Move -> InternalState -> Result
+getResultFromJump (Move from to) (GameState board playerType)
+    | isWin newBoard playerType = EndOfGame 1 startState
+    | otherwise               = YourTurn (getState (GameState newBoard (flipPlayer playerType)))
+    where newBoard = Map.insert from Empty (Map.insert to (board ! from ) board)
+
+
+isWin :: GameBoard -> PlayerType -> Bool
+isWin board playerType = False
     
 -- GAME CONTROLS & PERMISSIONS
 data Move = Move Square Square
