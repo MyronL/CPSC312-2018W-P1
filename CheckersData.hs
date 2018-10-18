@@ -9,7 +9,7 @@ import System.IO
 -- :load TwentyQs
 -- go
 
-data Turn = Int
+data Turn = Turn Int
   deriving (Eq, Ord, Show)
 
 data PlayerType = North | South
