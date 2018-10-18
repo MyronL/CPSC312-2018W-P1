@@ -52,7 +52,7 @@ data InternalState = GameState GameBoard PlayerType
 
 data State = State InternalState [Move]  -- internal_state available_actions
 
-data Result = EndOfGame Double State    -- end of game, value, starting state
+data Result = EndOfGame PlayerType GameBoard    -- end of game, value, starting state
             | MyTurn State              -- continue current player's turn with new state
             | YourTurn State            -- continue next player's turn with new state
             | InvalidMove
@@ -191,20 +191,25 @@ isJump move = 2 == abs (verticalMovement move)
 
 getResultFromMove :: Move -> InternalState -> Result
 getResultFromMove (Move from to) (GameState board playerType)
-    | isWin newBoard playerType = EndOfGame 1 startState
+    | isWin newBoard playerType = EndOfGame playerType newBoard
     | otherwise               = YourTurn (getState (GameState newBoard (flipPlayer playerType)))
     where newBoard = Map.insert from Empty (Map.insert to (board ! from ) board)
 
--- TODO: fix this
 getResultFromJump :: Move -> InternalState -> Result
 getResultFromJump (Move from to) (GameState board playerType)
-    | isWin newBoard playerType = EndOfGame 1 startState
-    | otherwise               = YourTurn (getState (GameState newBoard (flipPlayer playerType)))
-    where newBoard = Map.insert from Empty (Map.insert to (board ! from ) board)
+    | isWin newBoard playerType = EndOfGame playerType newBoard
+    | newJumpMoves /= []        = MyTurn (State (GameState newBoard playerType) newJumpMoves)
+    | otherwise                 = YourTurn (getState (GameState newBoard (flipPlayer playerType)))
+    where
+        boardAfterJump = Map.insert from Empty (Map.insert to (board ! from ) board)
+        newBoard = Map.insert (getJumpedSquare (Move from to)) Empty boardAfterJump
+        newJumpMoves = getActionsFromSquare (GameState newBoard playerType) to getAllJumpsFromSquare
 
 
 isWin :: GameBoard -> PlayerType -> Bool
-isWin board playerType = False
+isWin board playerType
+    | getActionsFromState (GameState board (flipPlayer playerType)) == [] = True
+    | otherwise = False
     
 -- GAME CONTROLS & PERMISSIONS
 data Move = Move Square Square

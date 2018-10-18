@@ -30,7 +30,7 @@ runFirst =
 
         putStartOptions
         getStartOptions
-        startGameTest        
+        startGameTest
 
 
 startGame = 
@@ -74,4 +74,41 @@ startGameTest =
     printBoard
     putStrLn $ displayPlayerTurn South (Turn 3) ++ "GO!" 
     turnMenu
-    printBoard    
+    printBoard
+
+
+
+play game (YourTurn (State (GameState board playerType) moves)) player1 player2 =
+    do
+        putStrLn (displayBoard board)
+        action <- player1 (State (GameState board playerType) moves)
+        let newResult = game action (State (GameState board playerType) moves)
+        play game newResult player2 player1
+
+play game (MyTurn (State (GameState board playerType) moves)) player1 player2 =
+    do
+        putStrLn (displayBoard board)
+        action <- player2 (State (GameState board playerType) moves)
+        let newResult = game action (State (GameState board playerType) moves)
+        play game newResult player1 player2
+
+play game (EndOfGame winningPlayer board) player1 player2 =
+    do
+        putStrLn (displayBoard board)
+        putStrLn ("The winner is " ++ (show winningPlayer))
+
+
+playCheckers = play checkers (YourTurn startState) humanPlayer humanPlayer
+
+humanPlayer :: State -> IO Move
+humanPlayer (State (GameState board playerType) (h:t)) =
+    do
+        putStrLn "Enter your move"
+        line <- getLine
+        return h
+
+
+simpleComputer :: State -> IO Move
+simpleComputer (State (GameState board playerType) (h:t)) =
+    do
+        return h
