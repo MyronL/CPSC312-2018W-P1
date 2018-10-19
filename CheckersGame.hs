@@ -49,7 +49,7 @@ getStartOptions =
           putStrLn "\nReady..."
           oneHalfSecDelay
           putStrLn "\nSTART! "
-          play checkers (YourTurn startState) humanPlayer simpleComputer
+          play checkers (YourTurn startState) humanPlayer (minimaxIO checkers)
        else do
           exitPolitely
 

@@ -4,11 +4,6 @@ import Data.Map as Map
 import Data.List as List
 import System.IO
 
--- To run it, try:
--- ghci
--- :load TwentyQs
--- go
-
 data Turn = Turn Int
   deriving (Eq, Ord, Show)
 
@@ -66,7 +61,7 @@ type IOPlayer = State -> IO Move
 -- GAME INIT ---------------------------
 
 
-boardSize = 8
+boardSize = 6
 
 -- All Steppable Checkers Squares: 
 --    (2,1), (4,1) ... 
