@@ -5,6 +5,7 @@ import CheckersData
 import Data.Map as Map
 import Data.List as List
 import System.IO
+import Data.Char
 
 import System.Exit
 import Control.Concurrent
@@ -68,12 +69,20 @@ displayBoard board = (addRowColLabels (displayBoardHelper board 1 1))
 printBoard = putStrLn (displayBoard startBoard)
 
 
--- Column Labels: labelling x coord as (a..h) (UI equiv to 1..8)
-colLabelTop = "\n" ++ leftPadding ++ "|a|b|c|d|e|f|g|h|\n \n" ++ leftPadding 
-colLabelBot = "\n" ++ leftPadding ++ "|a|b|c|d|e|f|g|h|\n"
+xIntToStr i = chr (96+i)
 
-northLabel = "\n" ++ leftPadding ++ "|---- NORTH ----|"
-southLabel = leftPadding ++ "|---- SOUTH ----|\n"
+letters = getLetters boardSize
+
+getLetters :: Int -> String
+getLetters 0 = "|"
+getLetters n = (getLetters (n-1)) ++ [xIntToStr n] ++ "|"
+
+-- Column Labels: labelling x coord as (a..h) (UI equiv to 1..8)
+colLabelTop = "\n" ++ leftPadding ++ letters ++ "\n \n" ++ leftPadding
+colLabelBot = "\n" ++ leftPadding ++ letters ++ "\n"
+
+northLabel = "\n" ++ leftPadding ++ "      NORTH      "
+southLabel = leftPadding ++ "     SOUTH      \n"
 
 addRowColLabels :: String -> String
 addRowColLabels b2s = 

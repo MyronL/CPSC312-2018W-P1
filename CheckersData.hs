@@ -82,11 +82,14 @@ initSquares :: GameBoard -> [Square] -> GameBoard
 initSquares board [] = board
 initSquares board (h:t) = initSquares (initPiece board h $ initPieceAtSquare h) t
 
+
+numRows = min 3 (div (boardSize-1) 2)
+
 initPieceAtSquare :: Square -> Piece
 initPieceAtSquare (Square x y) 
-  | y <= 3              = (Piece Starter North)
-  | y >= boardSize - 2  = (Piece Starter South)
-  | otherwise           = Empty
+  | y <= numRows            = (Piece Starter North)
+  | y > boardSize - numRows = (Piece Starter South)
+  | otherwise               = Empty
 
 
 initPiece :: GameBoard -> Square -> Piece -> GameBoard

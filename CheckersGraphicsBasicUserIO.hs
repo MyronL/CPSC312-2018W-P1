@@ -150,45 +150,19 @@ twoSecDelay = threadDelay 2000000
 threeSecDelay = threadDelay 3000000
 
 
--- Adapters for x-coord: (a..h) -> (1..8), and vice versa
--- (for passing to the Data Model layer)
-xStrToInt i
-  | i == "a" = 1
-  | i == "b" = 2 
-  | i == "c" = 3
-  | i == "d" = 4
-  | i == "e" = 5
-  | i == "f" = 6    
-  | i == "g" = 7  
-  | i == "h" = 8
-  | otherwise = 0   -- invalid if coord = 0
-
-
-xIntToStr i 
-  | i == 1 = "a"
-  | i == 2 = "b"  
-  | i == 3 = "c"
-  | i == 4 = "d"
-  | i == 5 = "e"
-  | i == 6 = "f"    
-  | i == 7 = "g"  
-  | i == 8 = "h"
-  | otherwise = "?"  -- invalid if coord = ?
-
-
 -- Adapter to Square coord: String -> Square x y
 --strToSq (h:m:t) 
     
 
 -- Adapter to Square coord: Square x y -> Dialogue String
-sqToUI (Square x y) = "[" ++ (xIntToStr x) ++ show y ++ "]"
+sqToUI (Square x y) = "[" ++ [(xIntToStr x)] ++ show y ++ "]"
 
 
 -- getLineCommand: Use this when expecting user-typed input (strings)
 getLineCommand =
    do
      line <- getLine
-     return (fixdel2 line)
+     return (fixdel line)
 
 
 
@@ -219,19 +193,6 @@ fixdel st
 remdel ('\DEL':r) = r
 remdel (a:'\DEL':r) = r
 remdel (a:r) = a: remdel r
-
--- fixdel2 deleted elements from string 
-fixdel2 :: [Char] -> [Char]
-fixdel2 st = fst (remdel2 st)
--- remdel2 st   returns (resulting_string, number_of_deletes_to_do)
-remdel2 :: [Char] -> ([Char], Int)
-remdel2 [] = ([],0)
-remdel2 ('\DEL':t) = (s,n+1)
-    where (s,n) = remdel2 t
-remdel2 (h:t)
-    | n>0 = (s,n-1)
-    | otherwise = (h:s,0)
-    where (s,n) = remdel2 t
 
 -- ------------------------------------ --
 
