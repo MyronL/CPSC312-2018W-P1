@@ -49,7 +49,7 @@ getStartOptions =
           putStrLn "\nReady..."
           oneHalfSecDelay
           putStrLn "\nSTART! "
-          play checkers (YourTurn startState) humanPlayer computer
+          play checkers (YourTurn startState) humanPlayer simpleComputer
        else do
           exitPolitely
 
@@ -57,22 +57,21 @@ getStartOptions =
 play:: Game -> Result -> IOPlayer -> IOPlayer -> IO ()
 play game (YourTurn (State (GameState board playerType) moves)) player1 player2 =
     do
-        putStrLn ("Current player: " ++ (show playerType))
-        putStrLn (displayBoard board)
+        putStrLn "======================================================================="
         action <- player1 (State (GameState board playerType) moves)
         let newResult = game action (State (GameState board playerType) moves)
         play game newResult player2 player1
 
 play game (MyTurn (State (GameState board playerType) moves)) player1 player2 =
     do
-        putStrLn ("Current player: " ++ (show playerType))
-        putStrLn (displayBoard board)
+        putStrLn "======================================================================="
         action <- player2 (State (GameState board playerType) moves)
         let newResult = game action (State (GameState board playerType) moves)
         play game newResult player1 player2
 
 play game (EndOfGame winningPlayer board) player1 player2 =
     do
+        putStrLn "======================================================================="
         putStrLn (displayBoard board)
         putStrLn ("The winner is " ++ (show winningPlayer))
 

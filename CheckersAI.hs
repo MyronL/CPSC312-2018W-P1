@@ -1,9 +1,19 @@
 module CheckersAI where
 
 import CheckersData
+import CheckersGraphicsBasicUserIO
 
 
-simpleComputer :: Player
-simpleComputer (State (GameState board playerType) (h:t)) = h
+simpleComputerPlayer :: Player
+simpleComputerPlayer (State (GameState board playerType) (h:t)) = h
 
-computer = createIOPlayer simpleComputer
+simpleComputer :: IOPlayer
+simpleComputer = createIOPlayer simpleComputerPlayer
+
+
+createIOPlayer :: Player -> IOPlayer
+createIOPlayer player state =
+    do
+        let (Move from to) = player state
+        putStrLn ("Computer moved " ++ sqToUI from ++ "->" ++ sqToUI to)
+        return (Move from to)

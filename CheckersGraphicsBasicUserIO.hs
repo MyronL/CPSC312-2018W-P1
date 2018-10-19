@@ -78,7 +78,7 @@ getPieceMenuResp moves =
               then do
                 putStrLn "OK"
                 let sq = moveablePieces !! (i-1)
-                getMoveJumpMenuResp [(Move from to) | (Move from to) <- moves, from == sq]
+                getMoveJumpMenuResp moves sq
               else do
                 turnMenu moves
 
@@ -89,19 +89,20 @@ getMoveablePieces :: [Move] -> [Square]
 getMoveablePieces moves = nub [from | (Move from to) <- moves]
 
 displayMoveJumpMenu = "Select your move from below.\nEnter anything else to cancel"
-getMoveJumpMenuResp moves =
+getMoveJumpMenuResp moves sq =
   do
+    let validMoves = [(Move from to) | (Move from to) <- moves, from == sq]
     putStrLn displayMoveJumpMenu
-    putStrLn (showMoves moves)
+    putStrLn (showMoves validMoves)
     res <- getLineCommand
     let num = readMaybe res :: Maybe Int
     case num of
         Nothing -> turnMenu moves
         Just i ->
-            if (i >= 1 && i <= length moves)
+            if (i >= 1 && i <= length validMoves)
               then do
                 putStrLn "OK"
-                let move = moves !! (i-1)
+                let move = validMoves !! (i-1)
                 return move
               else do
                 turnMenu moves
@@ -194,6 +195,8 @@ getLineCommand =
 humanPlayer :: IOPlayer
 humanPlayer (State (GameState board playerType) moves) =
     do
+        putStrLn ("Current player: " ++ (show playerType))
+        putStrLn (displayBoard board)
         move <- turnMenu moves
         return move
 

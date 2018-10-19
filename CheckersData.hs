@@ -62,11 +62,6 @@ type Game = Move -> State -> Result
 type Player = State -> Move
 type IOPlayer = State -> IO Move
 
-createIOPlayer :: Player -> IOPlayer
-createIOPlayer player state =
-    do
-        return (player state)
-
 
 -- GAME INIT ---------------------------
 
