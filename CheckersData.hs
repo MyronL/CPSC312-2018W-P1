@@ -186,6 +186,7 @@ startState = getState (GameState startBoard South)
 checkers :: Game
 checkers move (State internalState availableMoves)
     | elem move availableMoves = if isJump move then getResultFromJump move internalState else getResultFromMove move internalState
+    | move == Concede = concede internalState
     | otherwise                 = InvalidMove (State internalState availableMoves)
 
 
@@ -211,6 +212,11 @@ getResultFromJump (Move from to) (GameState board playerType)
         newJumpMoves = getActionsFromSquare (GameState newBoard playerType) to getAllJumpsFromSquare
 
 
+concede :: InternalState -> Result
+concede (GameState board playerType) = EndOfGame (flipPlayer playerType) board
+
+
+
 isWin :: GameBoard -> PlayerType -> Bool
 isWin board playerType
     | getActionsFromState (GameState board (flipPlayer playerType)) == [] = True
@@ -218,7 +224,7 @@ isWin board playerType
     
 -- GAME CONTROLS & PERMISSIONS
 data Move = Move Square Square
-    | Concede
+    | Concede 
     deriving (Show, Eq)
 
 
