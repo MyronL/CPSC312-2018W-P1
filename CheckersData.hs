@@ -220,6 +220,7 @@ isWin board playerType
     
 -- GAME CONTROLS & PERMISSIONS
 data Move = Move Square Square
+    | Concede
     deriving (Show, Eq)
 
 

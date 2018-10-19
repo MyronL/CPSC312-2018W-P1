@@ -6,6 +6,7 @@ import CheckersGraphicsBasicPrintLn
 import Data.Map as Map
 import Data.List as List
 import System.IO
+import Text.Read   (readMaybe)
 
 import System.Exit
 import Control.Concurrent
@@ -41,64 +42,74 @@ displayPlayerTurn p t =  show p ++ " Player, "  ++ show t ++ ": "
 
 
 
-displayTurnMenu = "Controls: Move/Jump (enter 1), Concede (gg), Exit (xx)"
--- TODO: sample
-displayMoveJumpCtrls = "(0)[b2] (0)[b2] (0)[b2] (0)[b2] (0)[b2] (0)[b2] (0)[b2] (0)[b2] (0)[b2] (0)[b2] (0)[b2] (0)[b2] "
+displayTurnMenu = "Controls: Move/Jump (enter), Concede (gg), Exit (xx)"
 
-turnMenu = 
+turnMenu :: [Move] -> IO Move
+turnMenu moves =
   do
     putStrLn displayTurnMenu
-    getTurnMenuResp
+    getTurnMenuResp moves
 
-getTurnMenuResp = 
+getTurnMenuResp moves =
   do
     response <- getLineCommand
     if (response == "gg")
         then
-          checkConcede
+          checkConcede moves
     else if (response == "xx")
         then
-          checkExit
+          checkExit moves
     else
-        return (readMove response)
-
--- TODO: read move somehow
-readMove :: String -> Maybe Move
-readMove response = Just (Move (Square 1 2) (Square 3 4))
+        getPieceMenuResp moves
 
 
--- -- TODO: (count should be actual player's piece count)
--- displayPieceMenu = "Select your pieces from numbers 1 to (count) below. \n Enter anything else to cancel"
--- getPieceMenuResp =
---   do
---     putStrLn displayPieceMenu
---     -- TODO: replace line below with list of player's pieces, as squares, in the same format as below
---     putStrLn displayMoveJumpCtrls
---     res <- getLineCommand
---     -- TODO: validations to pick the right square piece, then
---     if (res == " ")
---       then do
---         putStrLn "OK"
---         getMoveJumpMenuResp
---       else do
---         turnMenu
---
--- -- TODO: sample
--- displayMoveJumps = "(0)[b2]->[c3] (0)[b2]->[a3]"
--- displayMoveJumpMenu = "Select your moves from numbers 1 to (count) below. \n Enter anything else to cancel"
--- getMoveJumpMenuResp =
---   do
---     putStrLn displayMoveJumpMenu
---     putStrLn displayMoveJumps
---     res <- getLineCommand
---     -- TODO: validations to pick the right square piece, then
---     if (res == " ")
---       then do
---         putStrLn "OK"
---       else do
---         getPieceMenuResp
+displayPieceMenu = "Select your piece from below.\nEnter anything else to cancel"
+getPieceMenuResp moves =
+  do
+    putStrLn displayPieceMenu
+    let moveablePieces = getMoveablePieces moves
+    putStrLn (showMoveablePieces moveablePieces)
+    res <- getLineCommand
+    let num = readMaybe res :: Maybe Int
+    case num of
+        Nothing -> turnMenu moves
+        Just i ->
+            if (i >= 1 && i <= length moveablePieces)
+              then do
+                putStrLn "OK"
+                let sq = moveablePieces !! (i-1)
+                getMoveJumpMenuResp [(Move from to) | (Move from to) <- moves, from == sq]
+              else do
+                turnMenu moves
 
-checkConcede = 
+showMoveablePieces :: [Square] -> String
+showMoveablePieces squares = List.foldr (\ (i,sq) y -> "("++show i++")" ++ (sqToUI sq) ++ "  " ++ y) "" (zip [1..] squares)
+
+getMoveablePieces :: [Move] -> [Square]
+getMoveablePieces moves = nub [from | (Move from to) <- moves]
+
+displayMoveJumpMenu = "Select your move from below.\nEnter anything else to cancel"
+getMoveJumpMenuResp moves =
+  do
+    putStrLn displayMoveJumpMenu
+    putStrLn (showMoves moves)
+    res <- getLineCommand
+    let num = readMaybe res :: Maybe Int
+    case num of
+        Nothing -> turnMenu moves
+        Just i ->
+            if (i >= 1 && i <= length moves)
+              then do
+                putStrLn "OK"
+                let move = moves !! (i-1)
+                return move
+              else do
+                turnMenu moves
+
+showMoves :: [Move] -> String
+showMoves moves = List.foldr (\ (i,(Move from to)) y -> "("++show i++")" ++ (sqToUI from) ++ "->" ++ (sqToUI to) ++ "  " ++ y) "" (zip [1..] moves)
+
+checkConcede moves =
   do 
     putStrLn "Are you sure you want to Concede?"
     putStrLn "Type 'gg' to confirm. Otherwise return."
@@ -107,11 +118,11 @@ checkConcede =
       then do 
         -- TODO: trigger a loss here for current player (other player wins)
         putStrLn "Player Concedes..."
-        return Nothing
+        return Concede
       else do
-        turnMenu
+        turnMenu moves
 
-checkExit = 
+checkExit moves =
   do 
     putStrLn "Are you sure you want to Exit?"
     putStrLn "Type 'xx' to confirm. Otherwise return."
@@ -120,7 +131,7 @@ checkExit =
       then do 
         exitPolitely
       else do
-        turnMenu
+        turnMenu moves
 
 
 putStartOptions =  printLines startOptions
@@ -181,17 +192,10 @@ getLineCommand =
 
 
 humanPlayer :: IOPlayer
-humanPlayer (State (GameState board playerType) (h:t)) =
+humanPlayer (State (GameState board playerType) moves) =
     do
-        response <- turnMenu
-        return h
-        -- TODO: uncomment this when move reading is complete
---         case response of
---             Just move -> return move
---             _ ->
---                 do
---                     putStrLn "Couldn't read move, please try again"
---                     humanPlayer (State (GameState board playerType) (h:t))
+        move <- turnMenu moves
+        return move
 
 
 

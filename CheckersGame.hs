@@ -54,53 +54,10 @@ getStartOptions =
           exitPolitely
 
 
-startGame = 
-  do
-    printBoard
-    putStrLn $ "PLAYER ONE: GO"
-    response <- getLineCommand
-    putStrLn $ response
-    printBoard
-    putStrLn $ "PLAYER TWO: GO"
-
-
-
--- a Turn has:
--- - turn number 
--- - player
--- - game state
-
-
--- (TEST)
--- (possibly how the game would look like)
--- 
-startGameTest = 
-   do
-    printBoard
-    --putStrLn $ "PLAYER ONE TURN ONE: GO"
-    putStrLn $ displayPlayerTurn North (Turn 1) ++ "GO!" 
-    turnMenu
-    printBoard
-    putStrLn $ displayPlayerTurn South (Turn 1) ++ "GO!" 
-    turnMenu
-    printBoard
-    putStrLn $ displayPlayerTurn North (Turn 2) ++ "GO!" 
-    turnMenu
-    printBoard
-    putStrLn $ displayPlayerTurn South (Turn 2) ++ "GO!" 
-    turnMenu
-    printBoard
-    putStrLn $ displayPlayerTurn North (Turn 3) ++ "GO!" 
-    turnMenu
-    printBoard
-    putStrLn $ displayPlayerTurn South (Turn 3) ++ "GO!" 
-    turnMenu
-    printBoard
-
-
 play:: Game -> Result -> IOPlayer -> IOPlayer -> IO ()
 play game (YourTurn (State (GameState board playerType) moves)) player1 player2 =
     do
+        putStrLn ("Current player: " ++ (show playerType))
         putStrLn (displayBoard board)
         action <- player1 (State (GameState board playerType) moves)
         let newResult = game action (State (GameState board playerType) moves)
@@ -108,6 +65,7 @@ play game (YourTurn (State (GameState board playerType) moves)) player1 player2 
 
 play game (MyTurn (State (GameState board playerType) moves)) player1 player2 =
     do
+        putStrLn ("Current player: " ++ (show playerType))
         putStrLn (displayBoard board)
         action <- player2 (State (GameState board playerType) moves)
         let newResult = game action (State (GameState board playerType) moves)
