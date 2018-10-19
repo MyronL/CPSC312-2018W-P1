@@ -194,12 +194,19 @@ isJump :: Move -> Bool
 isJump move = 2 == abs (verticalMovement move)
 
 
--- TODO: king pieces when they get to the ends
 getResultFromMove :: Move -> InternalState -> Result
 getResultFromMove (Move from to) (GameState board playerType)
     | isWin newBoard playerType = EndOfGame playerType newBoard
     | otherwise               = YourTurn (getState (GameState newBoard (flipPlayer playerType)))
-    where newBoard = Map.insert from Empty (Map.insert to (board ! from ) board)
+    where
+        newBoard = Map.insert from Empty (Map.insert to newPiece board)
+        newPiece = getNewPiece (board ! from ) to
+
+getNewPiece :: Piece -> Square -> Piece
+getNewPiece (Piece pieceType playerType) (Square x y)
+    | y == 1 || y == boardSize  = (Piece King playerType)
+    | otherwise                 = (Piece pieceType playerType)
+
 
 getResultFromJump :: Move -> InternalState -> Result
 getResultFromJump (Move from to) (GameState board playerType)
@@ -207,9 +214,10 @@ getResultFromJump (Move from to) (GameState board playerType)
     | newJumpMoves /= []        = MyTurn (State (GameState newBoard playerType) newJumpMoves)
     | otherwise                 = YourTurn (getState (GameState newBoard (flipPlayer playerType)))
     where
-        boardAfterJump = Map.insert from Empty (Map.insert to (board ! from ) board)
+        boardAfterJump = Map.insert from Empty (Map.insert to newPiece board)
         newBoard = Map.insert (getJumpedSquare (Move from to)) Empty boardAfterJump
         newJumpMoves = getActionsFromSquare (GameState newBoard playerType) to getAllJumpsFromSquare
+        newPiece = getNewPiece (board ! from ) to
 
 
 concede :: InternalState -> Result
