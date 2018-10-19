@@ -23,16 +23,17 @@ import Control.Concurrent
 -- all the way to a winning player
 -- *All UI Controls should be passed (and handled/verified) to here, from the actual players
 
+-- start is the way to start the program
 start = runFirst
 
+-- runFirst prints out the text at the beginning of the program
 runFirst = 
     do
         printLines welcomeScreen
-
         putStartOptions
         getStartOptions
 
-
+-- getStartOptions gets the options for when you first open the program
 getStartOptions =
   do
     response <- getChar
@@ -54,7 +55,8 @@ getStartOptions =
           exitPolitely
 
 
-play:: Game -> Result -> IOPlayer -> IOPlayer -> IO ()
+-- play plays a game between two players until someone wins
+play :: Game -> Result -> IOPlayer -> IOPlayer -> IO ()
 play game (YourTurn (State (GameState board playerType) moves)) player1 player2 =
     do
         putStrLn "======================================================================="
@@ -79,6 +81,3 @@ play game (InvalidMove state) player1 player2 =
     do
         putStrLn "That is not a valid move, please try again"
         play game (YourTurn state) player2 player1
-
-
-playCheckers = play checkers (YourTurn startState) humanPlayer humanPlayer

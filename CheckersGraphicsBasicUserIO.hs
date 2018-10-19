@@ -12,6 +12,14 @@ import System.Exit
 import Control.Concurrent
 
 
+-- humanPlayer is a player that asks for input from the console
+humanPlayer :: IOPlayer
+humanPlayer (State (GameState board playerType) moves) =
+    do
+        putStrLn ("Current player: " ++ (show playerType))
+        putStrLn (displayBoard board)
+        move <- turnMenu moves
+        return move
 
 -- GAME DISPLAY (SIMPLE): SCREEN & USER DIALOGUE + INPUT ---------------
 
@@ -37,13 +45,11 @@ exitPolitely =
     oneSecDelay
     exitWith ExitSuccess
 
-displayPlayerTurn :: PlayerType -> Turn -> [Char]
-displayPlayerTurn p t =  show p ++ " Player, "  ++ show t ++ ": " 
-
 
 
 displayTurnMenu = "Controls: Move/Jump (enter), Concede (gg), Exit (xx)"
 
+-- turn menu returns a move through a series of menus
 turnMenu :: [Move] -> IO Move
 turnMenu moves =
   do
@@ -82,9 +88,11 @@ getPieceMenuResp moves =
               else do
                 turnMenu moves
 
+-- showMoveablePieces shows the list of moveable squares to be shown in the UI
 showMoveablePieces :: [Square] -> String
 showMoveablePieces squares = List.foldr (\ (i,sq) y -> "("++show i++")" ++ (sqToUI sq) ++ "  " ++ y) "" (zip [1..] squares)
 
+-- gets all the start points for the given moves
 getMoveablePieces :: [Move] -> [Square]
 getMoveablePieces moves = nub [from | (Move from to) <- moves]
 
@@ -107,6 +115,7 @@ getMoveJumpMenuResp moves sq =
               else do
                 turnMenu moves
 
+-- showMoves shows each move as a string
 showMoves :: [Move] -> String
 showMoves moves = List.foldr (\ (i,(Move from to)) y -> "("++show i++")" ++ (sqToUI from) ++ "->" ++ (sqToUI to) ++ "  " ++ y) "" (zip [1..] moves)
 
@@ -116,8 +125,7 @@ checkConcede moves =
     putStrLn "Type 'gg' to confirm. Otherwise return."
     res <- getLineCommand
     if (res == "gg")
-      then do 
-        -- TODO: trigger a loss here for current player (other player wins)
+      then do
         putStrLn "Player Concedes..."
         return Concede
       else do
@@ -148,13 +156,10 @@ oneSecDelay = threadDelay 1000000
 oneHalfSecDelay = threadDelay 1500000
 twoSecDelay = threadDelay 2000000
 threeSecDelay = threadDelay 3000000
-
-
--- Adapter to Square coord: String -> Square x y
---strToSq (h:m:t) 
     
 
--- Adapter to Square coord: Square x y -> Dialogue String
+-- sqToUI returns a string representation of a square
+sqToUI :: Square -> String
 sqToUI (Square x y) = "[" ++ [(xIntToStr x)] ++ show y ++ "]"
 
 
@@ -163,17 +168,6 @@ getLineCommand =
    do
      line <- getLine
      return (fixdel line)
-
-
-
-humanPlayer :: IOPlayer
-humanPlayer (State (GameState board playerType) moves) =
-    do
-        putStrLn ("Current player: " ++ (show playerType))
-        putStrLn (displayBoard board)
-        move <- turnMenu moves
-        return move
-
 
 
 {-
